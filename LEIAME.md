@@ -81,6 +81,6 @@ Remove o que está no arquivo; as plataformas ainda podem detectar IA por outros
 no app e de 256 MB na versão web.
 
 ## Uso consciente
-Feito para fotógrafos cujo trabalho autoral, com poucos ajustes finos por IA, é rotulado como "feito com IA".
-Usar para enganar o público ou remover a marcação de imagens realmente geradas por IA é um uso incorreto e não
-incentivado.
+O LimpaIA protege fotos autorais, captadas por câmera, que receberam o rótulo "Feito com IA" por causa de
+ajustes finos de edição. Não deve ser usado para esconder que uma imagem foi gerada por IA, enganar o público ou
+remover a marcação de imagens de outras pessoas. Texto completo no README e no `NOTICE`.

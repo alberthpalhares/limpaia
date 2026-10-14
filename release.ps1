@@ -37,8 +37,8 @@ irm https://github.com/REPO/releases/latest/download/install.ps1 | iex
 Quem já tem o LimpaIA recebe o aviso da versão nova pelo próprio programa (verificação semanal).
 Os instaladores e a atualização conferem o SHA-256 de cada pacote (veja `SHA256SUMS.txt`).
 
-**Uso consciente:** feito para fotógrafos cujo trabalho autoral, com poucos ajustes finos por IA, é rotulado como "feito com IA".
-Não use para enganar o público nem para remover a marcação de imagens realmente geradas por IA.
+**Uso consciente:** o LimpaIA protege fotos autorais, captadas por câmera, que receberam o rótulo "Feito com IA" por causa de ajustes finos de edição.
+Não use para esconder que uma imagem foi gerada por IA, enganar o público ou remover a marcação de imagens de outras pessoas.
 
 LimpaIA, criado por [Alberth Palhares](https://github.com/alberthpalhares) · Apache-2.0
 '@ -replace 'REPO', $repo

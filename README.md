@@ -27,10 +27,22 @@
 </p>
 
 > [!IMPORTANT]
-> **Uso consciente.** O LimpaIA é voltado a **fotógrafos** que dedicaram tempo, conhecimento e esforço às suas
-> fotografias, usaram **poucos recursos de IA só para ajustes finos** e tiveram a produção rotulada como conteúdo
-> de IA pela Meta e outras redes sociais. Usar a ferramenta para **enganar o público** que consome as fotografias,
-> ou para **remover a marcação de imagens que foram realmente geradas por IA**, é um uso incorreto e não incentivado.
+> ### 🤝 Uso consciente
+>
+> O LimpaIA nasceu para **proteger o trabalho de fotógrafos**. Uma foto que você fez, com o seu olhar, a sua técnica,
+> o seu tempo e o seu equipamento, não deixa de ser autoral só porque um retoque pontual usou uma ferramenta de IA:
+> tirar um fio do céu, apagar uma mancha, limpar uma distração. Mesmo assim, a Meta e outras redes sociais podem
+> rotular a imagem inteira como **“Feito com IA”**, o que confunde o público e desvaloriza o trabalho.
+>
+> **✅ Use o LimpaIA quando** a fotografia é sua, foi captada por uma câmera, e a IA entrou só em ajustes finos de edição.
+>
+> **🚫 Não use o LimpaIA para:**
+> - esconder que uma imagem foi **gerada ou criada em grande parte por IA**;
+> - **enganar** clientes, leitores, jurados de concursos ou qualquer pessoa sobre a origem de uma imagem;
+> - remover a marcação de **imagens de outras pessoas**.
+>
+> Esses usos são incorretos e não são incentivados pelo autor. Quem publica as imagens é responsável pelo uso que faz
+> delas. Na dúvida, seja transparente: contar como a foto foi editada nunca diminui um bom trabalho.
 
 ## O que o LimpaIA faz
 

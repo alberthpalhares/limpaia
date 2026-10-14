@@ -27,9 +27,9 @@ const OutDirName = "SEM_METADATA_IA"
 const Credit = "LimpaIA, por Alberth Palhares · https://github.com/alberthpalhares/limpaia"
 
 // Notice é o lembrete de uso consciente (relatório, ajuda, página web).
-const Notice = "Uso consciente: o LimpaIA é para fotógrafos cujo trabalho autoral, com poucos ajustes finos feitos por IA, " +
-	"é rotulado como \"feito com IA\" pelas redes sociais. Usá-lo para enganar o público ou para remover a marcação " +
-	"de imagens realmente geradas por IA é um uso incorreto e não incentivado."
+const Notice = "Uso consciente: o LimpaIA protege fotos autorais, captadas por câmera, que receberam o rótulo " +
+	"\"Feito com IA\" por causa de ajustes finos de edição. Não use para esconder que uma imagem foi gerada por IA, " +
+	"enganar o público ou remover a marcação de imagens de outras pessoas. Quem publica é responsável pelo uso."
 
 type FileResult struct {
 	Name      string

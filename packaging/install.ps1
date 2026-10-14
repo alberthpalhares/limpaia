@@ -72,9 +72,10 @@ Como usar:
 Só as fotos que tinham o selo de IA são gravadas, na subpasta SEM_METADATA_IA; os originais não mudam.
 Uma vez por semana o LimpaIA consulta o GitHub para avisar se há versão nova (nada sobre as fotos é enviado).
 
-Uso consciente: feito para fotógrafos cujo trabalho autoral, com poucos ajustes finos por IA,
-é rotulado como "feito com IA". Não use para enganar o público nem para remover a marcação de
-imagens realmente geradas por IA.
+Uso consciente: o LimpaIA protege fotos autorais, captadas por câmera, que
+receberam o rótulo "Feito com IA" por causa de ajustes finos de edição. Não use
+para esconder que uma imagem foi gerada por IA, enganar o público ou remover a
+marcação de imagens de outras pessoas. Quem publica é responsável pelo uso.
 
 LimpaIA, por Alberth Palhares - https://github.com/{{REPO}}
 
