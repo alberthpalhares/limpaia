@@ -1,0 +1,109 @@
+LimpaIA para macOS
+==================
+
+O que faz
+---------
+Remove dos JPEGs o selo de "feito com IA" (Content Credentials / C2PA) sem
+recomprimir a foto. Autoria, copyright, Exif e perfil de cor são mantidos.
+Seus originais NÃO são alterados: as cópias limpas ficam numa subpasta chamada
+JPEG_SEM_METADATA_IA, com os mesmos nomes, junto de um relatório.
+
+Funciona em qualquer Mac (chip Apple ou Intel), macOS 12 ou mais novo.
+
+
+Jeito mais fácil: um comando, sem aviso do macOS
+------------------------------------------------
+Abra o app Terminal (Cmd+Espaço, digite Terminal e tecle Enter), cole a linha
+abaixo e tecle Enter:
+
+  curl -fsSL https://github.com/alberthpalhares/limpaia/releases/latest/download/install.sh | sh
+
+Ele baixa o LimpaIA, confere se o arquivo veio íntegro, instala em Aplicativos
+e adiciona "Remover metadados de IA" ao botão direito do Finder. Instalado
+assim, o macOS não mostra o aviso "Mover para o Lixo": pule para o Passo 3.
+Para atualizar, rode o mesmo comando. Para remover:
+
+  curl -fsSL https://github.com/alberthpalhares/limpaia/releases/latest/download/install.sh | sh -s -- --remover
+
+Se preferir instalar pelo arquivo .zip, siga os Passos 1 e 2 abaixo.
+
+
+Passo 1 - Instalar (uma vez só)
+-------------------------------
+1. Dê dois cliques no arquivo .zip para descompactar. Aparece "LimpaIA".
+2. Arraste o "LimpaIA" para a pasta "Aplicativos" (ou deixe onde quiser).
+
+
+Passo 2 - Liberar a primeira abertura (uma vez só)
+--------------------------------------------------
+O LimpaIA é gratuito e não tem a assinatura paga da Apple. Por isso, na
+primeira vez o macOS bloqueia a abertura ("Não foi aberto - a Apple não pôde
+verificar..." ou "está danificado e não pode ser aberto"). Isso é esperado: o
+programa não acessa a internet e não altera seus originais. Para liberar,
+use a Opção A (um comando, funciona sempre) ou a Opção B:
+
+Opção A - um comando no Terminal (recomendado)
+  Abra o app Terminal, digite  xattr -dr com.apple.quarantine   (com um espaço
+  no final), arraste o LimpaIA para dentro da janela do Terminal e tecle Enter.
+  Pronto, dois cliques abrem direto. Funciona mesmo quando o aviso diz
+  "está danificado".
+
+Opção B - sem Terminal (só se o aviso for "não foi possível verificar")
+  1. Dê dois cliques no LimpaIA. Aparece o aviso: clique em "Concluído" (ou OK).
+     NÃO clique em "Mover para o Lixo".
+  2. Abra Ajustes do Sistema > Privacidade e Segurança.
+  3. Role até a seção "Segurança". Aparece "LimpaIA foi bloqueado".
+     Clique em "Abrir Mesmo Assim" e confirme com a senha ou Touch ID.
+  (No macOS 14 ou anterior também funciona: botão direito no LimpaIA >
+  Abrir > Abrir.)
+
+Depois disso o macOS não pergunta mais. Quando você publica uma versão nova
+do LimpaIA, repita o passo.
+
+Na primeira vez que ele ler uma pasta (Mesa, Documentos, Downloads...) o macOS
+pergunta se o LimpaIA pode acessá-la: clique em "Permitir".
+
+
+Passo 3 - Usar
+--------------
+Dê dois cliques no LimpaIA. Na primeira vez, ele pergunta se você quer
+adicionar "Remover metadados de IA" ao menu do botão direito do Finder:
+clique em "Instalar" (recomendado). Se clicar em "Agora não", ele não pergunta
+de novo. Depois abre uma janela para escolher a pasta com os JPEGs, e ao
+terminar a pasta de resultado abre sozinha.
+
+Usando o menu: clique com o botão direito numa pasta (ou em fotos JPEG) >
+Ações Rápidas > "Remover metadados de IA".
+Se a opção não aparecer: Ajustes do Sistema > Teclado > Atalhos de Teclado >
+Serviços > Arquivos e Pastas > marque "Remover metadados de IA".
+
+O menu usa uma cópia do programa guardada em
+~/Library/Application Support/LimpaIA, então você pode mover ou apagar o
+LimpaIA original depois de instalar o menu.
+
+Para instalar o menu depois (se clicou em "Agora não"), ou remover, no Terminal:
+
+     /Applications/LimpaIA.app/Contents/MacOS/LimpaIA --instalar
+     /Applications/LimpaIA.app/Contents/MacOS/LimpaIA --desinstalar
+
+(ajuste o caminho se o app estiver em outra pasta).
+
+
+Resultado
+---------
+Dentro da pasta processada surge JPEG_SEM_METADATA_IA com:
+- as fotos limpas (mesmos nomes);
+- RELATORIO_*.txt e RELATORIO_*.csv: quantas fotos tinham marca de IA, o que
+  foi removido, erros e se algo permaneceu.
+Publique as fotos dessa subpasta.
+
+
+Dúvidas comuns
+--------------
+- O aviso só oferece "Mover para o Lixo" ou diz "está danificado": não clique
+  em Mover para o Lixo; use a Opção A.
+- O resultado aparece numa janela ao final (não há janela de Terminal).
+- Nenhuma foto é alterada ou apagada; para repetir o processo, apague a
+  subpasta JPEG_SEM_METADATA_IA ou apenas rode novamente (ela é sobrescrita).
+- Remover o selo do arquivo não garante que uma rede social não detecte IA
+  por outros meios.

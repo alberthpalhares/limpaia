@@ -1,0 +1,267 @@
+<!doctype html>
+<!-- Modelo da versão web. tools/mkweb insere o wasm_exec.js e o WASM e grava dist/LimpaIA.html. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LimpaIA</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1d2330;--muted:#5d6676;--line:#dfe3ea;--accent:#2457d6;--accent-fg:#fff;--ok:#1f7a3a;--warn:#a15c00;--err:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#14171c;--card:#1d2128;--fg:#e8ebf0;--muted:#a0a8b5;--line:#323844;--accent:#6c95ff;--accent-fg:#0d1220;--ok:#5cc47a;--warn:#e0a548;--err:#ff7a6e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:32px 16px 48px}
+h1{font-size:28px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px}
+#drop{border:2px dashed var(--line);border-radius:12px;padding:28px 16px;text-align:center;transition:border-color .15s,background .15s}
+#drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+button.primary{font:inherit;font-weight:600;font-size:18px;background:var(--accent);color:var(--accent-fg);border:0;border-radius:10px;padding:14px 26px;cursor:pointer}
+button.primary:disabled{opacity:.5;cursor:default}
+.link{background:none;border:0;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer;padding:0}
+.hint{color:var(--muted);font-size:14px;margin:12px 0 0}
+#progress{display:none;margin-top:20px}
+progress{width:100%;height:10px}
+#log{list-style:none;padding:0;margin:12px 0 0;max-height:260px;overflow:auto;font-size:14px}
+#log li{padding:3px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;justify-content:space-between}
+#log .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.OK{color:var(--ok)}.SEM_IA{color:var(--muted)}.ERRO{color:var(--err)}
+#result{display:none;margin-top:20px;padding:16px;border-radius:10px;border:1px solid var(--line);white-space:pre-wrap}
+#result.bad{border-color:var(--warn)}
+.foot{color:var(--muted);font-size:13px;margin-top:20px}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>LimpaIA</h1>
+  <p class="sub">Remove dos JPEGs o selo de "feito com IA" (C2PA / Content Credentials) sem recomprimir a foto.
+    Autoria, copyright, Exif e perfil de cor são mantidos. Os originais não são alterados.</p>
+  <div class="card">
+    <div id="drop">
+      <button class="primary" id="pick" disabled>Carregando…</button>
+      <p class="hint">ou arraste a pasta (ou as fotos) para cá ·
+        <button class="link" id="pickFiles" type="button">escolher fotos soltas</button></p>
+      <p class="hint" id="mode"></p>
+    </div>
+    <input type="file" id="inDir" webkitdirectory multiple>
+    <input type="file" id="inFiles" accept=".jpg,.jpeg,image/jpeg" multiple>
+    <div id="progress"><progress id="bar" value="0" max="1"></progress><ul id="log"></ul></div>
+    <div id="result"></div>
+  </div>
+  <p class="foot">Tudo acontece neste computador: as fotos não são enviadas para nenhum lugar, e a página funciona sem internet.
+    Remover o selo do arquivo não garante que uma rede social não detecte IA por outros meios.</p>
+</main>
+
+<script>/*WASM_EXEC_JS*/</script>
+<script type="application/octet-stream" id="wasm">/*WASM_GZ_BASE64*/</script>
+<script>
+"use strict";
+const OUT = "JPEG_SEM_METADATA_IA";
+const MAX = 256 * 1024 * 1024;           // limite por arquivo (memória do WebAssembly)
+const ZIP_PART = 1500 * 1024 * 1024;     // zip sem zip64: divide antes de 4 GB
+const canWriteDir = "showDirectoryPicker" in window;
+const $ = id => document.getElementById(id);
+const isJPEG = n => /\.jpe?g$/i.test(n) && !n.startsWith("._");
+
+// ---------- WebAssembly ----------
+const ready = (async () => {
+  const b64 = $("wasm").textContent.trim();
+  const raw = atob(b64), gz = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) gz[i] = raw.charCodeAt(i);
+  const wasm = await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+  const go = new Go();
+  const started = new Promise(r => { window.onLimpaiaReady = r; });
+  const { instance } = await WebAssembly.instantiate(wasm, go.importObject);
+  go.run(instance);
+  await started;
+})();
+
+// ---------- destinos: pasta (Chrome/Edge) ou zip (demais) ----------
+function dirSink(dir) {
+  let out = null;
+  const exists = async n => { try { await out.getFileHandle(n); return true; } catch { return false; } };
+  return {
+    label: dir.name + "/" + OUT,
+    async write(name, data, unique) {
+      out ||= await dir.getDirectoryHandle(OUT, { create: true });
+      if (unique) { // relatório: nunca sobrescreve um anterior
+        const m = name.match(/^(.*?)(\.[^.]*)$/);
+        for (let i = 1; await exists(name); i++) name = `${m[1]}_${i}${m[2]}`;
+      }
+      const w = await (await out.getFileHandle(name, { create: true })).createWritable();
+      await w.write(data);
+      await w.close();
+      return name;
+    },
+    async finish() { return []; },
+  };
+}
+
+const CRC = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+
+// zip "store" (sem compressão: JPEG já é comprimido), nomes em UTF-8
+function zipSink(download = true) {
+  const parts = [], blobs = [];
+  let cur = null;
+  const d = new Date();
+  const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const hdr = (sig, n) => { const b = new DataView(new ArrayBuffer(n)); b.setUint32(0, sig, true); return b; };
+  const close = () => {
+    if (!cur) return;
+    const cd = [];
+    let cdSize = 0;
+    for (const e of cur.entries) {
+      const h = hdr(0x02014b50, 46);
+      [[4, 20], [6, 20], [8, 0x0800], [10, 0], [12, dosTime], [14, dosDate]].forEach(([o, v]) => h.setUint16(o, v, true));
+      h.setUint32(16, e.crc, true); h.setUint32(20, e.size, true); h.setUint32(24, e.size, true);
+      h.setUint16(28, e.name.length, true); h.setUint32(42, e.off, true);
+      cd.push(h, e.name); cdSize += 46 + e.name.length;
+    }
+    const end = hdr(0x06054b50, 22);
+    end.setUint16(8, cur.entries.length, true); end.setUint16(10, cur.entries.length, true);
+    end.setUint32(12, cdSize, true); end.setUint32(16, cur.size, true);
+    const n = parts.length + 1;
+    const name = n === 1 ? OUT + ".zip" : `${OUT}_parte${n}.zip`;
+    parts.push({ name, blob: new Blob([...cur.chunks, ...cd, end], { type: "application/zip" }) });
+    cur = null;
+  };
+  return {
+    label: OUT + ".zip (na pasta Downloads)",
+    async write(name, data) {
+      const fname = new TextEncoder().encode(OUT + "/" + name);
+      const need = 30 + fname.length + data.length;
+      if (cur && cur.size + need > ZIP_PART) close();
+      cur ||= { chunks: [], entries: [], size: 0 };
+      const crc = crc32(data);
+      const h = hdr(0x04034b50, 30);
+      [[4, 20], [6, 0x0800], [8, 0], [10, dosTime], [12, dosDate]].forEach(([o, v]) => h.setUint16(o, v, true));
+      h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true);
+      h.setUint16(26, fname.length, true);
+      cur.entries.push({ name: fname, crc, size: data.length, off: cur.size });
+      cur.chunks.push(h, fname, new Blob([data]));
+      cur.size += need;
+      return name;
+    },
+    async finish() {
+      close();
+      if (download) for (const p of parts) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(p.blob); a.download = p.name;
+        document.body.append(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      }
+      return parts;
+    },
+  };
+}
+
+// ---------- processamento ----------
+let busy = false;
+function setBusy(b) { busy = b; $("pick").disabled = b; $("pickFiles").disabled = b; }
+
+async function run(files, sink) {
+  await ready;
+  setBusy(true);
+  const log = $("log"), bar = $("bar"), box = $("result");
+  log.textContent = ""; box.style.display = "none"; $("progress").style.display = "block";
+  files = files.filter(f => isJPEG(f.name)).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  bar.max = Math.max(files.length, 1); bar.value = 0;
+  const results = [], seen = new Set();
+  let wrote = 0;
+  try {
+    if (!files.length) throw new Error("Nenhum arquivo .jpg/.jpeg encontrado.");
+    for (const f of files) {
+      let r;
+      if (seen.has(f.name.toLowerCase())) r = { Name: f.name, Status: "ERRO", Err: "nome repetido (outra foto com o mesmo nome)" };
+      else if (f.size > MAX) r = { Name: f.name, Status: "ERRO", Err: `arquivo muito grande (${f.size >> 20} MiB)` };
+      else {
+        try {
+          const res = limpaiaProcess(f.name, new Uint8Array(await f.arrayBuffer()));
+          r = JSON.parse(res.result);
+          if (res.out) { await sink.write(f.name, res.out); wrote++; }
+        } catch (e) { r = { ...(r || { Name: f.name }), Status: "ERRO", Err: String(e && e.message || e) }; }
+      }
+      seen.add(f.name.toLowerCase());
+      results.push(r);
+      const li = document.createElement("li");
+      const n = document.createElement("span"); n.className = "n"; n.textContent = f.name;
+      const s = document.createElement("span"); s.className = r.Status;
+      s.textContent = r.Status === "ERRO" ? "erro: " + r.Err : (r.Found || []).length ? "selo de IA removido" : "sem selo de IA";
+      li.append(n, s); log.append(li); li.scrollIntoView({ block: "nearest" });
+      bar.value++;
+    }
+    let summary;
+    if (wrote) {
+      const rep = limpaiaReport(JSON.stringify(results));
+      await sink.write(rep.base + ".txt", new TextEncoder().encode("﻿" + rep.txt), true); // BOM: acentos certos no Bloco de Notas
+      await sink.write(rep.base + ".csv", rep.csv, true);
+      summary = rep.summary.replace(/Saída: .*/, "Saída: " + sink.label);
+    } else summary = limpaiaReport(JSON.stringify(results)).summary.replace(/\n*Saída: .*/, "");
+    const zips = await sink.finish();
+    const bad = results.some(r => r.Status === "ERRO" || (r.Remaining || []).length);
+    box.className = bad ? "bad" : ""; box.textContent = summary; box.style.display = "block";
+    return { results, summary, zips };
+  } catch (e) {
+    box.className = "bad"; box.textContent = String(e && e.message || e); box.style.display = "block";
+    return { error: String(e && e.message || e), results };
+  } finally { setBusy(false); }
+}
+
+// pasta com permissão de escrita (Chrome/Edge): grava JPEG_SEM_METADATA_IA nela
+async function runDir(dir) {
+  if ((await dir.requestPermission({ mode: "readwrite" })) !== "granted") return;
+  const files = [];
+  for await (const [name, h] of dir.entries()) if (h.kind === "file" && isJPEG(name)) files.push(await h.getFile());
+  return run(files, dirSink(dir));
+}
+
+// ---------- interface ----------
+$("mode").textContent = canWriteDir
+  ? `As fotos limpas são gravadas na subpasta ${OUT}, dentro da pasta escolhida.`
+  : `As fotos limpas são baixadas em ${OUT}.zip. (No Chrome ou no Edge, elas são gravadas direto na pasta.)`;
+ready.then(() => { $("pick").textContent = "Escolher pasta com as fotos"; setBusy(false); },
+  e => { $("pick").textContent = "Navegador sem suporte"; const b = $("result"); b.className = "bad"; b.style.display = "block";
+    b.textContent = "Este navegador não conseguiu carregar o LimpaIA. Use uma versão recente do Safari, Chrome, Edge ou Firefox.\n\n" + e; });
+
+$("pick").onclick = async () => {
+  if (!canWriteDir) return $("inDir").click();
+  try { await runDir(await showDirectoryPicker({ id: "limpaia", mode: "readwrite" })); }
+  catch (e) { if (e.name !== "AbortError") throw e; }
+};
+$("pickFiles").onclick = () => $("inFiles").click();
+// seletor de pasta comum: só os arquivos do nível de cima, como no app
+$("inDir").onchange = e => { const fs = [...e.target.files].filter(f => f.webkitRelativePath.split("/").length === 2); e.target.value = ""; run(fs, zipSink()); };
+$("inFiles").onchange = e => { const fs = [...e.target.files]; e.target.value = ""; run(fs, zipSink()); };
+
+const drop = $("drop");
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, () => drop.classList.remove("over")));
+const readAll = r => new Promise((ok, no) => { const all = []; const next = () => r.readEntries(b => b.length ? (all.push(...b), next()) : ok(all), no); next(); });
+drop.addEventListener("drop", async e => {
+  e.preventDefault();
+  if (busy) return;
+  const items = [...e.dataTransfer.items].filter(i => i.kind === "file");
+  // os handles precisam ser pedidos ainda dentro do evento
+  const handles = canWriteDir && items[0] && "getAsFileSystemHandle" in items[0] ? items.map(i => i.getAsFileSystemHandle()) : null;
+  const entries = items.map(i => i.webkitGetAsEntry && i.webkitGetAsEntry());
+  if (handles) {
+    const hs = await Promise.all(handles);
+    if (hs.length === 1 && hs[0] && hs[0].kind === "directory") return runDir(hs[0]);
+  }
+  const files = [];
+  for (const en of entries) {
+    if (!en) continue;
+    if (en.isDirectory) for (const c of await readAll(en.createReader())) { if (c.isFile) files.push(await new Promise((ok, no) => c.file(ok, no))); }
+    else files.push(await new Promise((ok, no) => en.file(ok, no)));
+  }
+  run(files, zipSink());
+});
+
+// para testes automatizados
+window.__limpaia = { ready, run, runDir, zipSink, processFiles: files => run(files, zipSink(false)) };
+</script>
+</body>
+</html>

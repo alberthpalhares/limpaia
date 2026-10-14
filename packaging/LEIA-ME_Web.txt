@@ -1,0 +1,41 @@
+LimpaIA no navegador (Mac, Windows ou Linux)
+============================================
+
+O que faz
+---------
+Remove dos JPEGs o selo de "feito com IA" (Content Credentials / C2PA) sem
+recomprimir a foto. Autoria, copyright, Exif e perfil de cor são mantidos.
+Seus originais NÃO são alterados.
+
+É o mesmo LimpaIA dos programas para Windows e Mac, mas dentro de uma página:
+não precisa instalar nada e o Mac não mostra o aviso "Mover para o Lixo".
+As fotos não saem do seu computador e a página funciona sem internet.
+
+
+Como usar
+---------
+1. Dê dois cliques no arquivo LimpaIA.html. Ele abre no navegador.
+   (Se abrir em outro programa: botão direito > Abrir com > Safari, Chrome ou Edge.)
+2. Clique em "Escolher pasta com as fotos" e escolha a pasta com os JPEGs.
+   Também dá para arrastar a pasta, ou as fotos, para dentro da página.
+
+Onde ficam as fotos limpas
+- No Chrome ou no Edge: dentro da própria pasta, numa subpasta chamada
+  JPEG_SEM_METADATA_IA (o navegador pede permissão para gravar: clique em
+  "Editar arquivos" ou "Permitir").
+- No Safari ou no Firefox: baixadas como JPEG_SEM_METADATA_IA.zip, na pasta
+  Downloads. Dê dois cliques no zip para abrir a pasta. (Se o Safari perguntar
+  se pode baixar arquivos, clique em "Permitir".)
+
+Junto das fotos vem um relatório (RELATORIO_*.txt e RELATORIO_*.csv): quantas
+fotos tinham marca de IA, o que foi removido, erros e se algo permaneceu.
+Publique as fotos dessa subpasta.
+
+
+Dúvidas comuns
+--------------
+- Navegadores suportados: Safari 16.4 ou mais novo, Chrome, Edge
+  e Firefox atuais.
+- Cada foto pode ter até 256 MB.
+- Remover o selo do arquivo não garante que uma rede social não detecte IA
+  por outros meios.
