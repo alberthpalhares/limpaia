@@ -1,2 +1,4 @@
 build/
 dist/
+# recurso do .exe (ícone/versão): gerado pelo build.ps1
+cmd/limpaia/rsrc_windows_*.syso

@@ -1,3 +1,5 @@
+// Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+
 // Package jpegclean remove, no nível de segmentos JPEG, os indicadores de IA
 // generativa (C2PA/Content Credentials e DigitalSourceType em XMP) sem
 // decodificar nem recomprimir a imagem: tudo a partir do primeiro SOS é
@@ -14,6 +16,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"limpaia/internal/xmpai"
 )
 
 const (
@@ -29,23 +33,9 @@ var (
 	xmpStd = []byte("http://ns.adobe.com/xap/1.0/\x00")
 	xmpExt = []byte("http://ns.adobe.com/xmp/extension/\x00")
 
-	// valores de DigitalSourceType que indicam mídia gerada/composta por IA
-	aiValue = `(?:composite)?(?:with)?trainedalgorithmicmedia|algorithmicmedia|compositesynthetic|compositewithtrained[a-z]*`
-	// propriedade como atributo: Iptc4xmpExt:DigitalSourceType="...ai..."
-	reDSTAttr = regexp.MustCompile(`(?is)\s+[\w.-]+:DigitalSourceType\s*=\s*"[^"]*(?:` + aiValue + `)[^"]*"`)
-	// propriedade como elemento, com texto ou rdf:resource
-	reDSTElem = regexp.MustCompile(`(?is)<([\w.-]+):DigitalSourceType\b[^>]*?(?:/>|>[^<]*</[\w.-]+:DigitalSourceType\s*>)`)
-	// Lightroom/Camera Raw registra remoção generativa como crs:fill_method="firefly"
-	reFill = regexp.MustCompile(`(?i)\s+crs:fill_method\s*=\s*"firefly"`)
-	// marcadores que, se sobrarem, indicam persistência
-	// (a palavra "firefly" sozinha, p.ex. numa palavra-chave sobre vaga-lumes, não conta)
-	reMarker  = regexp.MustCompile(`(?i)trainedAlgorithmicMedia|compositeWithTrained|compositeSynthetic|adobe\.firefly|fill_method\s*=\s*"firefly"|generativefill|generative fill|c2pa|cai-manifests|contentcredentials|jumbf`)
-	reAIValue = regexp.MustCompile(`(?i)` + aiValue)
-	// dcterms:provenance aponta para o manifest C2PA (inclusive remoto, na nuvem)
-	reProv    = regexp.MustCompile(`(?is)\s+dcterms:provenance\s*=\s*"[^"]*(?:c2pa|cai-manifests|contentauth)[^"]*"`)
-	reProvEl  = regexp.MustCompile(`(?is)<dcterms:provenance\b[^>]*?(?:/>|>[^<]*</dcterms:provenance\s*>)`)
-	reProvVal = regexp.MustCompile(`(?i)c2pa|cai-manifests|contentauth`)
-	reHasExt  = regexp.MustCompile(`HasExtendedXMP\s*=\s*"([0-9A-Fa-f]{32})"`)
+	// marcadores de IA no XMP: ver o pacote xmpai
+	reMarker = xmpai.Marker
+	reHasExt = regexp.MustCompile(`HasExtendedXMP\s*=\s*"([0-9A-Fa-f]{32})"`)
 )
 
 // Limite de memória do XMP estendido reconstruído (o total declarado vem do arquivo).
@@ -127,28 +117,7 @@ func instance(p []byte) uint16 {
 	return binary.BigEndian.Uint16(p[2:4])
 }
 
-// stripAI remove do texto XMP os indicadores de IA conhecidos.
-func stripAI(s string) string {
-	// prefiltro: evita rodar as regex em XMP grande que não menciona nada disso
-	if l := strings.ToLower(s); !strings.Contains(l, "digitalsourcetype") && !strings.Contains(l, "fill_method") && !strings.Contains(l, "provenance") {
-		return s
-	}
-	n := reFill.ReplaceAllString(s, "")
-	n = reDSTAttr.ReplaceAllString(n, "")
-	n = reProv.ReplaceAllString(n, "")
-	n = reProvEl.ReplaceAllStringFunc(n, func(m string) string {
-		if reProvVal.MatchString(m) {
-			return ""
-		}
-		return m
-	})
-	return reDSTElem.ReplaceAllStringFunc(n, func(m string) string {
-		if reAIValue.MatchString(m) {
-			return ""
-		}
-		return m
-	})
-}
+func stripAI(s string) string { return xmpai.Strip(s) }
 
 func cleanXMP(payload []byte) (out []byte, removed bool) {
 	head := xmpStd

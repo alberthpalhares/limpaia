@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="206" viewBox="0 0 960 206" role="img" aria-label="Windows PowerShell">
+<title>Windows PowerShell</title>
+<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#93c5fd"/><stop offset="1" stop-color="#dbeafe"/></linearGradient>
+  <filter id="sh" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity=".18"/></filter>
+</defs>
+
+<g filter="url(#sh)"><rect x="16" y="12" width="928" height="178" rx="12" fill="#012456"/></g>
+<rect x="16" y="12" width="928" height="38" rx="12" fill="#1f2937"/><rect x="16" y="36" width="928" height="14" fill="#1f2937"/>
+
+<text x="480" y="36" text-anchor="middle" font-size="13" fill="#d1d5db" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">Windows PowerShell</text>
+<text x="40" y="90" font-size="14" font-family="Cascadia Mono, SF Mono, Menlo, Consolas, monospace"><tspan fill="#facc15">PS C:\Users\voce&gt; </tspan><tspan fill="#f3f4f6">irm https://github.com/alberthpalhares/limpaia/releases/latest/download/install.ps1 | iex</tspan></text>
+<text x="40" y="132" font-size="14" fill="#f3f4f6" font-family="Cascadia Mono, SF Mono, Menlo, Consolas, monospace">Baixando LimpaIA v0.0.2...</text>
+<text x="40" y="154" font-size="14" fill="#f3f4f6" font-family="Cascadia Mono, SF Mono, Menlo, Consolas, monospace">Adicionando 'Remover metadados de IA' ao botão direito do Explorer...</text>
+<text x="40" y="176" font-size="14" fill="#4ade80" font-family="Cascadia Mono, SF Mono, Menlo, Consolas, monospace">Pronto! LimpaIA v0.0.2 instalado.</text>
+</svg>

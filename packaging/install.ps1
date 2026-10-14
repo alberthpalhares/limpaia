@@ -1,3 +1,4 @@
+# Copyright 2026 Alberth Palhares - SPDX-License-Identifier: Apache-2.0
 # Instalador do LimpaIA para Windows. Uso (no PowerShell):
 #   irm https://github.com/{{REPO}}/releases/latest/download/install.ps1 | iex
 #   $env:LIMPAIA_REMOVER=1; irm https://github.com/{{REPO}}/releases/latest/download/install.ps1 | iex
@@ -49,7 +50,9 @@
 		$sh = (New-Object -ComObject WScript.Shell).CreateShortcut($shortcut)
 		$sh.TargetPath = $installed
 		$sh.WorkingDirectory = Split-Path $installed
-		$sh.Description = 'Remove o selo de IA (C2PA) de fotos JPEG'
+		$sh.Description = 'Remove o selo de IA (C2PA) de fotos JPEG, PNG e WebP'
+		$ico = Join-Path (Split-Path $installed) 'LimpaIA.ico'
+		if (Test-Path $ico) { $sh.IconLocation = $ico }
 		$sh.Save()
 	} catch {
 		Write-Host "`nErro: $($_.Exception.Message)" -ForegroundColor Red
@@ -63,10 +66,17 @@
 Pronto! LimpaIA $tag instalado.
 
 Como usar:
-  - Botão direito numa pasta com fotos (ou no fundo da pasta aberta) > "Remover metadados de IA"
+  - Botão direito numa pasta, ou em fotos selecionadas (JPG, PNG, WebP) > "Remover metadados de IA"
     (no Windows 11: botão direito > "Mostrar mais opções");
   - ou abra o LimpaIA pelo Menu Iniciar e escolha a pasta.
-As fotos limpas ficam na subpasta JPEG_SEM_METADATA_IA; os originais não mudam.
+Só as fotos que tinham o selo de IA são gravadas, na subpasta SEM_METADATA_IA; os originais não mudam.
+Uma vez por semana o LimpaIA consulta o GitHub para avisar se há versão nova (nada sobre as fotos é enviado).
+
+Uso consciente: feito para fotógrafos cujo trabalho autoral, com poucos ajustes finos por IA,
+é rotulado como "feito com IA". Não use para enganar o público nem para remover a marcação de
+imagens realmente geradas por IA.
+
+LimpaIA, por Alberth Palhares - https://github.com/{{REPO}}
 
 Para remover:
   `$env:LIMPAIA_REMOVER=1; irm https://github.com/{{REPO}}/releases/latest/download/install.ps1 | iex

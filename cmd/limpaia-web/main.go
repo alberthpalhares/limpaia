@@ -1,3 +1,5 @@
+// Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+
 //go:build js && wasm
 
 // limpaia-web expõe a limpeza para a página web (dist/LimpaIA.html, gerada por

@@ -1,8 +1,9 @@
+# Copyright 2026 Alberth Palhares - SPDX-License-Identifier: Apache-2.0
 <#
-.SYNOPSIS  Remove o indicador de IA (C2PA / Content Credentials) de JPEGs sem recomprimir.
+.SYNOPSIS  Remove o indicador de IA (C2PA / Content Credentials) de fotos JPEG, PNG e WebP sem recomprimir.
 .EXAMPLE   .\Remover-MetadataIA.ps1 "D:\Fotos\Eventos\Evento XYZ"
            .\Remover-MetadataIA.ps1 "D:\Fotos\Evento" -Verificar   # só diagnostica
-Saída: subpasta JPEG_SEM_METADATA_IA; originais ficam intactos.
+Saída: subpasta SEM_METADATA_IA (só as fotos com indicação de IA); originais ficam intactos.
 #>
 param([Parameter(Mandatory, Position = 0)][string]$Pasta, [switch]$Verificar)
 $exe = Join-Path $PSScriptRoot 'LimpaIA.exe'

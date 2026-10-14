@@ -1,9 +1,11 @@
+// Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+
 // mkweb monta a versão web num único HTML autocontido: insere no modelo o
 // wasm_exec.js do Go (o mesmo toolchain que compilou o WASM) e o WASM
 // comprimido com gzip em base64 (a página descompacta com DecompressionStream).
 // Abre direto do disco (file://), sem servidor e sem internet.
 //
-// Uso: mkweb -wasm <arquivo.wasm> -modelo <index.html> -out <LimpaIA.html> [-wasmexec <wasm_exec.js>]
+// Uso: mkweb -wasm <arquivo.wasm> -modelo <index.html> -out <LimpaIA.html> [-versao vX.Y.Z] [-icone <png>] [-wasmexec <wasm_exec.js>]
 package main
 
 import (
@@ -38,6 +40,8 @@ func main() {
 	tmpl := flag.String("modelo", "", "modelo HTML (web/index.html)")
 	execJS := flag.String("wasmexec", "", "wasm_exec.js (padrão: o do GOROOT do go no PATH)")
 	out := flag.String("out", "", "HTML de saída")
+	ver := flag.String("versao", "dev", "versão exibida na página")
+	icon := flag.String("icone", filepath.Join("assets", "icon", "icon-128.png"), "ícone PNG (favicon e logotipo)")
 	flag.Parse()
 	if *wasm == "" || *tmpl == "" || *out == "" {
 		flag.Usage()
@@ -71,6 +75,10 @@ func main() {
 
 	html := replaceOnce(string(page), "/*WASM_EXEC_JS*/", string(js))
 	html = replaceOnce(html, "/*WASM_GZ_BASE64*/", base64.StdEncoding.EncodeToString(gz.Bytes()))
+	png, err := os.ReadFile(*icon)
+	check(err)
+	html = replaceOnce(html, "/*ICONE_PNG_BASE64*/", base64.StdEncoding.EncodeToString(png))
+	html = replaceOnce(html, "/*VERSAO*/", *ver)
 	check(os.WriteFile(*out, []byte(html), 0o644))
 	fmt.Printf("%s: página autocontida, %d bytes (WASM %d -> gzip %d)\n", *out, len(html), len(bin), gz.Len())
 }

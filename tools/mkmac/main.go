@@ -1,9 +1,11 @@
+// Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+
 // mkmac monta o pacote para macOS a partir dos dois executáveis Go:
 // funde arm64 + x86_64 num binário universal (equivalente ao `lipo -create`),
 // coloca-o dentro de LimpaIA.app e grava um .zip com permissões Unix
 // (o Windows não grava o bit de execução, e sem ele o app não abre no Mac).
 //
-// Uso: mkmac -arm64 <arquivo> -amd64 <arquivo> -leiame <txt> -out <zip>
+// Uso: mkmac -arm64 <arquivo> -amd64 <arquivo> [-icns <icns>] [-versao X.Y.Z] -leiame <txt> -out <zip>
 package main
 
 import (
@@ -27,9 +29,11 @@ const infoPlist = `<?xml version="1.0" encoding="UTF-8"?>
 	<key>CFBundleName</key><string>LimpaIA</string>
 	<key>CFBundleDisplayName</key><string>LimpaIA</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
-	<key>CFBundleShortVersionString</key><string>1.0</string>
-	<key>CFBundleVersion</key><string>1</string>
-	<key>LSMinimumSystemVersion</key><string>%s</string>
+	<key>CFBundleShortVersionString</key><string>%[2]s</string>
+	<key>CFBundleVersion</key><string>%[2]s</string>
+	<key>CFBundleIconFile</key><string>LimpaIA</string>
+	<key>NSHumanReadableCopyright</key><string>Copyright 2026 Alberth Palhares · Apache-2.0</string>
+	<key>LSMinimumSystemVersion</key><string>%[1]s</string>
 	<key>LSUIElement</key><true/>
 	<key>NSHighResolutionCapable</key><true/>
 </dict>
@@ -106,6 +110,8 @@ func main() {
 	arm := flag.String("arm64", "", "executável darwin/arm64")
 	amd := flag.String("amd64", "", "executável darwin/amd64")
 	readme := flag.String("leiame", "", "texto de instruções")
+	icns := flag.String("icns", "", "ícone do app (.icns)")
+	ver := flag.String("versao", "0.0.0", "versão do app (X.Y.Z)")
 	out := flag.String("out", "", "zip de saída")
 	flag.Parse()
 	if *arm == "" || *amd == "" || *out == "" {
@@ -145,7 +151,13 @@ func main() {
 	add("LimpaIA.app/", os.ModeDir|0o755, nil)
 	add("LimpaIA.app/Contents/", os.ModeDir|0o755, nil)
 	add("LimpaIA.app/Contents/MacOS/", os.ModeDir|0o755, nil)
-	add("LimpaIA.app/Contents/Info.plist", 0o644, []byte(fmt.Sprintf(infoPlist, minos)))
+	add("LimpaIA.app/Contents/Info.plist", 0o644, []byte(fmt.Sprintf(infoPlist, minos, *ver)))
+	if *icns != "" {
+		b, err := os.ReadFile(*icns)
+		check(err)
+		add("LimpaIA.app/Contents/Resources/", os.ModeDir|0o755, nil)
+		add("LimpaIA.app/Contents/Resources/LimpaIA.icns", 0o644, b)
+	}
 	add("LimpaIA.app/Contents/MacOS/LimpaIA", 0o755, universal)
 	if *readme != "" {
 		b, err := os.ReadFile(*readme)

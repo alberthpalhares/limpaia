@@ -3,12 +3,22 @@ LimpaIA para Windows
 
 O que faz
 ---------
-Remove dos JPEGs o selo de "feito com IA" (Content Credentials / C2PA) sem
-recomprimir a foto. Autoria, copyright, Exif e perfil de cor são mantidos.
-Seus originais NÃO são alterados: as cópias limpas ficam numa subpasta chamada
-JPEG_SEM_METADATA_IA, com os mesmos nomes, junto de um relatório.
+Remove das suas fotos (JPEG, PNG e WebP) o selo de "feito com IA" (Content
+Credentials / C2PA) sem recomprimir. Autoria, copyright, Exif e perfil de cor
+são mantidos. Seus originais NÃO são alterados: só as fotos que tinham o selo
+são copiadas, já limpas, para uma subpasta chamada SEM_METADATA_IA, com os
+mesmos nomes, junto de um relatório.
 
-Funciona no Windows 10 e 11. Não precisa instalar nada nem ser administrador.
+Funciona no Windows 10 e 11. Não precisa ser administrador.
+
+
+Uso consciente
+--------------
+O LimpaIA é voltado a fotógrafos que dedicaram tempo, conhecimento e esforço às
+suas fotografias, usaram poucos recursos de IA para ajustes finos e tiveram a
+produção rotulada como conteúdo de IA pela Meta e outras redes sociais.
+Usá-lo para enganar o público ou para remover a marcação de imagens realmente
+geradas por IA é um uso incorreto e não incentivado.
 
 
 Jeito mais fácil: um comando, sem aviso do SmartScreen
@@ -22,27 +32,25 @@ Ele baixa o LimpaIA, confere se o arquivo veio íntegro, instala para o seu
 usuário, cria o atalho no Menu Iniciar e o item "Remover metadados de IA" no
 botão direito. Instalado assim, o Windows não mostra "O Windows protegeu o seu
 PC": pule para "Usar". (O "Controle Inteligente de Aplicativos" do Windows 11,
-se estiver ligado, continua bloqueando; veja abaixo.)
-Para atualizar, rode o mesmo comando. Para remover:
+se estiver ligado, continua bloqueando; veja abaixo.) Para remover:
 
   $env:LIMPAIA_REMOVER=1; irm https://github.com/alberthpalhares/limpaia/releases/latest/download/install.ps1 | iex
 
 Se preferir usar o LimpaIA.exe baixado, veja abaixo.
 
 
-Primeira abertura (uma vez só)
-------------------------------
+Primeira abertura do LimpaIA.exe baixado (uma vez só)
+-----------------------------------------------------
 O LimpaIA é gratuito e não tem assinatura digital paga. Por isso, ao abrir o
 LimpaIA.exe pela primeira vez, o Windows pode mostrar "O Windows protegeu o
-seu PC". Isso é esperado: o programa não acessa a internet e não altera seus
-originais. Para liberar:
+seu PC". Isso é esperado: o programa não envia suas fotos a lugar nenhum e não
+altera seus originais. Para liberar:
 
   1. Clique em "Mais informações".
   2. Clique em "Executar assim mesmo".
 
 Ao baixar pelo Edge ou Chrome, o navegador também pode avisar "não é baixado
-com frequência": escolha "Manter" e depois "Manter assim mesmo". Enviar o
-programa dentro de um .zip costuma reduzir esse aviso.
+com frequência": escolha "Manter" e depois "Manter assim mesmo".
 
 Se o aviso nem deixar abrir: botão direito no LimpaIA.exe > Propriedades >
 marque "Desbloquear" na parte de baixo > OK. Depois abra de novo.
@@ -60,33 +68,44 @@ e sem assinatura).
 
 Usar
 ----
-Dê dois cliques no LimpaIA.exe. Na primeira vez, ele pergunta se você quer
-adicionar "Remover metadados de IA" ao menu do botão direito: responda "Sim"
-(recomendado). Depois abre uma janela para escolher a pasta com os JPEGs, e ao
-terminar a pasta de resultado abre sozinha.
+Pelo botão direito (recomendado): selecione uma pasta, ou várias fotos JPG,
+PNG ou WebP, clique com o botão direito > "Remover metadados de IA" (no
+Windows 11, primeiro "Mostrar mais opções"). Também funciona no fundo de uma
+pasta aberta. Todas as fotos selecionadas são processadas de uma vez, numa
+janela e num relatório só.
 
-Usando o menu: clique com o botão direito numa pasta (ou no fundo de uma
-pasta aberta) > "Remover metadados de IA". No Windows 11 fica em "Mostrar
-mais opções". Processa todos os JPEGs daquela pasta de uma vez.
+Pelo programa: dê dois cliques no LimpaIA (Menu Iniciar ou LimpaIA.exe) e
+escolha a pasta. Na primeira vez, ele pergunta se você quer adicionar o item
+ao botão direito: responda "Sim". Ao terminar, a pasta de resultado abre
+sozinha. Também dá para arrastar uma pasta ou fotos sobre o LimpaIA.exe.
 
 O menu usa uma cópia do programa em %LOCALAPPDATA%\LimpaIA, então você pode
-mover ou apagar o LimpaIA.exe baixado depois de instalar o menu.
-
-Instalar o menu depois (se respondeu "Não") ou remover, no Prompt de Comando:
+mover ou apagar o LimpaIA.exe baixado depois de instalar o menu. Para
+instalar o menu depois (se respondeu "Não") ou remover, no Prompt de Comando:
 
      LimpaIA.exe --instalar
      LimpaIA.exe --desinstalar
 
-Também dá para arrastar uma pasta de fotos sobre o LimpaIA.exe.
-
 
 Resultado
 ---------
-Dentro da pasta processada surge JPEG_SEM_METADATA_IA com:
-- as fotos limpas (mesmos nomes);
-- RELATORIO_*.txt e RELATORIO_*.csv: quantas fotos tinham marca de IA, o que
-  foi removido, erros e se algo permaneceu.
-Publique as fotos dessa subpasta.
+Dentro da pasta processada surge SEM_METADATA_IA com:
+- só as fotos que tinham o selo de IA, já limpas (mesmos nomes);
+- RELATORIO_*.txt e RELATORIO_*.csv: todas as fotos analisadas, quais tinham
+  marca de IA, o que foi removido, erros e se algo permaneceu.
+Publique as fotos dessa subpasta. Se nenhuma foto tinha o selo, nada é criado.
+
+
+Atualizações
+------------
+Uma vez por semana, ao usar o LimpaIA, ele consulta o GitHub para saber se há
+versão nova (nada sobre as suas fotos é enviado). Se houver, pergunta se quer
+atualizar: responda "Sim" e pronto, sem baixar nada à mão. "Cancelar"
+desliga o aviso.
 
 Remover o selo do arquivo não garante que uma rede social não detecte IA por
 outros meios.
+
+
+LimpaIA, criado por Alberth Palhares - https://github.com/alberthpalhares/limpaia
+Código aberto sob a licença Apache-2.0.

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="206" viewBox="0 0 960 206" role="img" aria-label="Terminal">
+<title>Terminal</title>
+<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#93c5fd"/><stop offset="1" stop-color="#dbeafe"/></linearGradient>
+  <filter id="sh" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity=".18"/></filter>
+</defs>
+
+<g filter="url(#sh)"><rect x="16" y="12" width="928" height="178" rx="12" fill="#ffffff"/></g>
+<rect x="16" y="12" width="928" height="38" rx="12" fill="#e5e7eb"/><rect x="16" y="36" width="928" height="14" fill="#e5e7eb"/>
+<circle cx="38" cy="31" r="6" fill="#ff5f57"/><circle cx="58" cy="31" r="6" fill="#febc2e"/><circle cx="78" cy="31" r="6" fill="#28c840"/>
+<text x="480" y="36" text-anchor="middle" font-size="13" fill="#374151" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">Terminal</text>
+<text x="40" y="90" font-size="14" font-family="Cascadia Mono, SF Mono, Menlo, Consolas, monospace"><tspan fill="#16a34a">~ % </tspan><tspan fill="#111827">curl -fsSL https://github.com/alberthpalhares/limpaia/releases/latest/download/install.sh | sh</tspan></text>
+<text x="40" y="132" font-size="14" fill="#111827" font-family="Cascadia Mono, SF Mono, Menlo, Consolas, monospace">Baixando LimpaIA v0.0.2...</text>
+<text x="40" y="154" font-size="14" fill="#111827" font-family="Cascadia Mono, SF Mono, Menlo, Consolas, monospace">Adicionando "Remover metadados de IA" ao botão direito do Finder...</text>
+<text x="40" y="176" font-size="14" fill="#15803d" font-family="Cascadia Mono, SF Mono, Menlo, Consolas, monospace">Pronto! LimpaIA v0.0.2 instalado em /Applications/LimpaIA.app</text>
+</svg>

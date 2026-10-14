@@ -47,7 +47,7 @@ func hash(t *testing.T, p string) [32]byte {
 
 func TestQA_CollectVariants(t *testing.T) {
 	d := t.TempDir()
-	for _, n := range []string{"A.JPG", "b.jpeg", "c Ção.Jpg", "._d.jpg", "e.png", "f.jpg.tmp"} {
+	for _, n := range []string{"A.JPG", "b.jpeg", "c Ção.Jpg", "._d.jpg", "e.png", "f.jpg.tmp", "g.WEBP", "h.gif"} {
 		write(t, filepath.Join(d, n), jpegAI())
 	}
 	os.Mkdir(filepath.Join(d, "sub.jpg"), 0o755)
@@ -59,7 +59,7 @@ func TestQA_CollectVariants(t *testing.T) {
 	for _, g := range got {
 		names = append(names, filepath.Base(g))
 	}
-	if strings.Join(names, ",") != "A.JPG,b.jpeg,c Ção.Jpg" {
+	if strings.Join(names, ",") != "A.JPG,b.jpeg,c Ção.Jpg,e.png,g.WEBP" {
 		t.Fatalf("coletados: %v", names)
 	}
 }

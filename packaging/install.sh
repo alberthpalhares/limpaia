@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright 2026 Alberth Palhares - SPDX-License-Identifier: Apache-2.0
 # Instalador do LimpaIA para macOS. Uso (no Terminal):
 #   curl -fsSL https://github.com/{{REPO}}/releases/latest/download/install.sh | sh
 #   curl -fsSL https://github.com/{{REPO}}/releases/latest/download/install.sh | sh -s -- --remover
@@ -60,11 +61,20 @@ cat <<EOF
 Pronto! LimpaIA $TAG instalado em $APP
 
 Como usar:
-  - Botão direito numa pasta com fotos > Ações Rápidas > "Remover metadados de IA"
+  - Botão direito numa pasta, ou em fotos selecionadas (JPG, PNG, WebP) >
+    Ações Rápidas > "Remover metadados de IA"
     (se não aparecer: Ajustes do Sistema > Teclado > Atalhos de Teclado >
     Serviços > Arquivos e Pastas > marque "Remover metadados de IA");
   - ou abra o LimpaIA (Spotlight: Cmd+Espaço e digite LimpaIA) e escolha a pasta.
-As fotos limpas ficam na subpasta JPEG_SEM_METADATA_IA; os originais não mudam.
+Só as fotos que tinham o selo de IA são gravadas, na subpasta SEM_METADATA_IA;
+os originais não mudam. Uma vez por semana o LimpaIA consulta o GitHub para
+avisar se há versão nova (nada sobre as fotos é enviado).
+
+Uso consciente: feito para fotógrafos cujo trabalho autoral, com poucos ajustes
+finos por IA, é rotulado como "feito com IA". Não use para enganar o público
+nem para remover a marcação de imagens realmente geradas por IA.
+
+LimpaIA, por Alberth Palhares - https://github.com/{{REPO}}
 
 Para remover:
   curl -fsSL https://github.com/{{REPO}}/releases/latest/download/install.sh | sh -s -- --remover

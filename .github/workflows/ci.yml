@@ -1,0 +1,68 @@
+# Copyright 2026 Alberth Palhares - SPDX-License-Identifier: Apache-2.0
+# Testes em Linux, Windows e macOS, e instalação real com o install.sh num Mac.
+name: Testes
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  testes:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go vet ./...
+      - run: go test ./...
+      - name: Compila para todos os sistemas
+        shell: bash
+        run: |
+          for t in windows/amd64 darwin/arm64 darwin/amd64 linux/amd64; do
+            GOOS=${t%/*} GOARCH=${t#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/limpaia
+          done
+          GOOS=js GOARCH=wasm go build -o /dev/null ./cmd/limpaia-web
+
+  instalacao-mac:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Monta o pacote do Mac e o install.sh
+        run: |
+          mkdir -p build dist
+          for a in arm64 amd64; do
+            CGO_ENABLED=0 GOOS=darwin GOARCH=$a go build -trimpath -ldflags "-s -w -X main.version=v0.0.0" -o build/LimpaIA-mac-$a ./cmd/limpaia
+          done
+          go run ./tools/mkmac -arm64 build/LimpaIA-mac-arm64 -amd64 build/LimpaIA-mac-amd64 -icns assets/icon/LimpaIA.icns -versao 0.0.0 -leiame packaging/LEIA-ME_macOS.txt -out dist/LimpaIA-macOS.zip
+          go run ./tools/mkinstall -repo alberthpalhares/limpaia -tag v0.0.0 -mac dist/LimpaIA-macOS.zip -win dist/LimpaIA-macOS.zip -out dist
+      - name: Instala com o install.sh (servidor local no lugar do GitHub)
+        run: |
+          (cd dist && python3 -m http.server 8765 >/dev/null 2>&1 &)
+          sleep 2
+          LIMPAIA_BASE_URL=http://127.0.0.1:8765 sh dist/install.sh
+      - name: Confere a instalação
+        run: |
+          APP=/Applications/LimpaIA.app; [ -d "$APP" ] || APP="$HOME/Applications/LimpaIA.app"
+          "$APP/Contents/MacOS/LimpaIA" --versao
+          lipo -archs "$APP/Contents/MacOS/LimpaIA"
+          test -f "$APP/Contents/Resources/LimpaIA.icns"
+          plutil -lint "$APP/Contents/Info.plist"
+          WF="$HOME/Library/Services/Remover metadados de IA.workflow/Contents"
+          plutil -lint "$WF/Info.plist" "$WF/document.wflow"
+          grep -q org.webmproject.webp "$WF/Info.plist"
+          "$HOME/Library/Application Support/LimpaIA/LimpaIA" --versao
+      - name: Remove com --remover
+        run: |
+          sh dist/install.sh --remover
+          test ! -e /Applications/LimpaIA.app && test ! -e "$HOME/Applications/LimpaIA.app"
+          test ! -e "$HOME/Library/Services/Remover metadados de IA.workflow"

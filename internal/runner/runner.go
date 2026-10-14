@@ -1,4 +1,7 @@
-// Package runner processa pastas/arquivos JPEG, valida e gera relatório.
+// Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+
+// Package runner processa pastas/arquivos de imagem (JPEG, PNG, WebP), valida e
+// gera relatório. Só as fotos com indicação de IA são gravadas na subpasta.
 package runner
 
 import (
@@ -14,9 +17,19 @@ import (
 	"time"
 
 	"limpaia/internal/jpegclean"
+	"limpaia/internal/pngclean"
+	"limpaia/internal/webpclean"
 )
 
-const OutDirName = "JPEG_SEM_METADATA_IA"
+const OutDirName = "SEM_METADATA_IA"
+
+// Credit aparece no relatório e nas telas de ajuda.
+const Credit = "LimpaIA, por Alberth Palhares · https://github.com/alberthpalhares/limpaia"
+
+// Notice é o lembrete de uso consciente (relatório, ajuda, página web).
+const Notice = "Uso consciente: o LimpaIA é para fotógrafos cujo trabalho autoral, com poucos ajustes finos feitos por IA, " +
+	"é rotulado como \"feito com IA\" pelas redes sociais. Usá-lo para enganar o público ou para remover a marcação " +
+	"de imagens realmente geradas por IA é um uso incorreto e não incentivado."
 
 type FileResult struct {
 	Name      string
@@ -51,9 +64,39 @@ func (s Summary) Persist() int {
 	return s.count(func(r FileResult) bool { return len(r.Remaining) > 0 })
 }
 
-func isJPEG(name string) bool {
-	e := strings.ToLower(filepath.Ext(name))
-	return e == ".jpg" || e == ".jpeg"
+func isImage(name string) bool {
+	switch strings.ToLower(filepath.Ext(name)) {
+	case ".jpg", ".jpeg", ".png", ".webp":
+		return true
+	}
+	return false
+}
+
+// codec reúne as funções de um formato.
+type codec struct {
+	name      string
+	clean     func([]byte) ([]byte, jpegclean.Info, error)
+	dims      func([]byte) (int, int, error)
+	preserved func(orig, clean []byte) error
+}
+
+var (
+	cJPEG = codec{"JPEG", jpegclean.Clean, jpegclean.Dimensions, jpegclean.PreservedEqual}
+	cPNG  = codec{"PNG", pngclean.Clean, pngclean.Dimensions, pngclean.PreservedEqual}
+	cWebP = codec{"WebP", webpclean.Clean, webpclean.Dimensions, webpclean.PreservedEqual}
+)
+
+// detect escolhe o formato pela assinatura do arquivo (não pela extensão).
+func detect(data []byte) (codec, error) {
+	switch {
+	case len(data) >= 2 && data[0] == 0xFF && data[1] == 0xD8:
+		return cJPEG, nil
+	case pngclean.IsPNG(data):
+		return cPNG, nil
+	case webpclean.IsWebP(data):
+		return cWebP, nil
+	}
+	return codec{}, fmt.Errorf("formato não suportado (esperado JPEG, PNG ou WebP)")
 }
 
 // Collect expande pastas (não recursivo) e arquivos em uma lista de JPEGs.
@@ -72,7 +115,7 @@ func Collect(inputs []string) ([]string, error) {
 			return nil, err
 		}
 		if !st.IsDir() {
-			if isJPEG(in) && st.Mode().IsRegular() {
+			if isImage(in) && st.Mode().IsRegular() {
 				add(in)
 			}
 			continue
@@ -82,7 +125,7 @@ func Collect(inputs []string) ([]string, error) {
 			return nil, err
 		}
 		for _, e := range ents {
-			if e.IsDir() || !isJPEG(e.Name()) || strings.HasPrefix(e.Name(), "._") {
+			if e.IsDir() || !isImage(e.Name()) || strings.HasPrefix(e.Name(), "._") {
 				continue
 			}
 			p := filepath.Join(in, e.Name())
@@ -147,23 +190,28 @@ func csvSafe(s string) string {
 	return s
 }
 
-// clean executa a limpeza de um arquivo sem deixar um JPEG malformado derrubar o lote.
-func clean(data []byte) (out []byte, info jpegclean.Info, err error) {
+// clean executa a limpeza de um arquivo sem deixar uma imagem malformada derrubar o lote.
+func clean(c codec, data []byte) (out []byte, info jpegclean.Info, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			out, err = nil, fmt.Errorf("arquivo malformado (%v)", r)
 		}
 	}()
-	return jpegclean.Clean(data)
+	return c.clean(data)
 }
 
-// Process limpa e valida um JPEG já lido, sem tocar no disco (usado também pela
-// versão web). Status: OK, SEM_IA ou ERRO; em ERRO, out é nil.
+// Process limpa e valida uma imagem já lida, sem tocar no disco (usado também
+// pela versão web). Status: OK, SEM_IA ou ERRO; em ERRO, out é nil.
 func Process(name string, data []byte) ([]byte, FileResult) {
 	fr := FileResult{Name: name}
-	out, info, err := clean(data)
+	c, err := detect(data)
+	if err != nil {
+		fr.Status, fr.Err = "ERRO", err.Error()
+		return nil, fr
+	}
+	out, info, err := clean(c, data)
 	if err == nil {
-		err = verify(data, out, &fr)
+		err = verify(c, data, out, &fr)
 	}
 	fr.Found, fr.Removed, fr.Remaining = info.Found, info.Removed, info.Remaining
 	switch {
@@ -200,6 +248,8 @@ func Run(files []string, dryRun bool, log io.Writer) Summary {
 		case dryRun:
 			fr.Status = "DIAGNOSTICO"
 			fr.Remaining = nil
+		case fr.Status == "SEM_IA":
+			// sem indicação de IA: nada a limpar, a foto não é copiada
 		default:
 			dir := filepath.Join(filepath.Dir(src), OutDirName)
 			if err = os.MkdirAll(dir, 0o755); err == nil {
@@ -232,12 +282,12 @@ func Run(files []string, dryRun bool, log io.Writer) Summary {
 }
 
 // verify faz a validação original → processado.
-func verify(orig, clean []byte, fr *FileResult) error {
-	w1, h1, err := jpegclean.Dimensions(orig)
+func verify(c codec, orig, clean []byte, fr *FileResult) error {
+	w1, h1, err := c.dims(orig)
 	if err != nil {
 		return err
 	}
-	w2, h2, err := jpegclean.Dimensions(clean)
+	w2, h2, err := c.dims(clean)
 	if err != nil {
 		return err
 	}
@@ -245,10 +295,10 @@ func verify(orig, clean []byte, fr *FileResult) error {
 		return fmt.Errorf("dimensões diferem: %dx%d → %dx%d", w1, h1, w2, h2)
 	}
 	fr.Dims = fmt.Sprintf("%dx%d", w1, h1)
-	if err := jpegclean.PreservedEqual(orig, clean); err != nil {
+	if err := c.preserved(orig, clean); err != nil {
 		return err
 	}
-	if bytes.Contains(clean, []byte("jumb")) && bytes.Contains(bytes.ToLower(clean), []byte("c2pa")) {
+	if c.name == "JPEG" && bytes.Contains(clean, []byte("jumb")) && bytes.Contains(bytes.ToLower(clean), []byte("c2pa")) {
 		// só falha se estiver em segmento APP11/JUMBF de metadados (antes do SOS)
 		if segs, _, err := jpegclean.Parse(clean); err == nil {
 			for _, sg := range segs {
@@ -265,7 +315,7 @@ func verify(orig, clean []byte, fr *FileResult) error {
 func ReportText(s Summary, now time.Time) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "RELATÓRIO — Remoção de metadados de IA (%s)\n\n", now.Format("02/01/2006 15:04:05"))
-	fmt.Fprintf(&b, "JPEGs encontrados ........ %d\n", s.Total())
+	fmt.Fprintf(&b, "Fotos encontradas ........ %d\n", s.Total())
 	fmt.Fprintf(&b, "Processados com sucesso .. %d\n", s.Total()-s.Errors())
 	fmt.Fprintf(&b, "Continham indicador de IA  %d\n", s.WithAI())
 	fmt.Fprintf(&b, "Com erro ................. %d\n", s.Errors())
@@ -285,7 +335,9 @@ func ReportText(s Summary, now time.Time) string {
 			fmt.Fprintf(&b, "    erro: %s\n", r.Err)
 		}
 	}
-	b.WriteString("\nPreservado byte a byte: dados da imagem (sem recompressão), Exif, ICC, IPTC/Photoshop, XMP (autoria/copyright) e demais segmentos.\n")
+	b.WriteString("\nSó as fotos com indicação de IA são gravadas nesta pasta; as demais não precisavam de limpeza.\n")
+	b.WriteString("Preservado byte a byte: dados da imagem (sem recompressão), Exif, ICC, IPTC/Photoshop, XMP (autoria/copyright) e demais segmentos.\n")
+	b.WriteString("\n" + Notice + "\n\n" + Credit + "\n")
 	return b.String()
 }
 
@@ -333,7 +385,10 @@ func writeReport(s Summary) string {
 // Resumo curto para exibir ao usuário.
 func (s Summary) Text() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "JPEGs encontrados: %d\nCom indicador de IA (removido): %d\nCom erro: %d\nIndicador ainda presente: %d\n", s.Total(), s.WithAI(), s.Errors(), s.Persist())
+	fmt.Fprintf(&b, "Fotos encontradas: %d\nCom indicador de IA (removido): %d\nCom erro: %d\nIndicador ainda presente: %d\n", s.Total(), s.WithAI(), s.Errors(), s.Persist())
+	if s.WithAI() == 0 && s.Errors() == 0 {
+		b.WriteString("\nNenhuma foto tinha indicação de IA; nada foi gravado.\n")
+	}
 	for _, d := range s.OutDirs {
 		fmt.Fprintf(&b, "\nSaída: %s", d)
 	}

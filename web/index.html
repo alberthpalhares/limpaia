@@ -1,17 +1,24 @@
 <!doctype html>
-<!-- Modelo da versão web. tools/mkweb insere o wasm_exec.js e o WASM e grava dist/LimpaIA.html. -->
+<!-- Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+     Modelo da versão web. tools/mkweb insere o wasm_exec.js, o WASM, o ícone e a versão e grava dist/LimpaIA.html. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Alberth Palhares">
 <title>LimpaIA</title>
+<link rel="icon" id="favicon" href="data:,">
 <style>
 :root{--bg:#f6f7f9;--card:#fff;--fg:#1d2330;--muted:#5d6676;--line:#dfe3ea;--accent:#2457d6;--accent-fg:#fff;--ok:#1f7a3a;--warn:#a15c00;--err:#b42318}
 @media (prefers-color-scheme:dark){:root{--bg:#14171c;--card:#1d2128;--fg:#e8ebf0;--muted:#a0a8b5;--line:#323844;--accent:#6c95ff;--accent-fg:#0d1220;--ok:#5cc47a;--warn:#e0a548;--err:#ff7a6e}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 main{max-width:720px;margin:0 auto;padding:32px 16px 48px}
-h1{font-size:28px;margin:0 0 4px}
+h1{font-size:28px;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+h1 img{width:44px;height:44px}
+.notice{margin:20px 0 0;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:14px;color:var(--muted)}
+.notice b{color:var(--fg)}
+.foot a{color:var(--accent)}
 .sub{color:var(--muted);margin:0 0 24px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px}
 #drop{border:2px dashed var(--line);border-radius:12px;padding:28px 16px;text-align:center;transition:border-color .15s,background .15s}
@@ -34,9 +41,9 @@ input[type=file]{display:none}
 </head>
 <body>
 <main>
-  <h1>LimpaIA</h1>
-  <p class="sub">Remove dos JPEGs o selo de "feito com IA" (C2PA / Content Credentials) sem recomprimir a foto.
-    Autoria, copyright, Exif e perfil de cor são mantidos. Os originais não são alterados.</p>
+  <h1><img id="logo" alt="" src="data:,">LimpaIA</h1>
+  <p class="sub">Remove das suas fotos (JPEG, PNG e WebP) o selo de "feito com IA" (C2PA / Content Credentials) sem recomprimir.
+    Autoria, copyright, Exif e perfil de cor são mantidos. Os originais não são alterados, e só as fotos que tinham o selo são gravadas.</p>
   <div class="card">
     <div id="drop">
       <button class="primary" id="pick" disabled>Carregando…</button>
@@ -45,24 +52,31 @@ input[type=file]{display:none}
       <p class="hint" id="mode"></p>
     </div>
     <input type="file" id="inDir" webkitdirectory multiple>
-    <input type="file" id="inFiles" accept=".jpg,.jpeg,image/jpeg" multiple>
+    <input type="file" id="inFiles" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple>
     <div id="progress"><progress id="bar" value="0" max="1"></progress><ul id="log"></ul></div>
     <div id="result"></div>
   </div>
+  <p class="notice"><b>Uso consciente.</b> O LimpaIA é para fotógrafos que dedicaram tempo, conhecimento e esforço às suas fotos,
+    usaram poucos recursos de IA só em ajustes finos e tiveram o trabalho rotulado como "feito com IA" pela Meta e outras redes sociais.
+    Usá-lo para enganar quem vê as fotos, ou para remover a marcação de imagens realmente geradas por IA, é um uso incorreto e não incentivado.</p>
   <p class="foot">Tudo acontece neste computador: as fotos não são enviadas para nenhum lugar, e a página funciona sem internet.
-    Remover o selo do arquivo não garante que uma rede social não detecte IA por outros meios.</p>
+    Remover o selo do arquivo não garante que uma rede social não detecte IA por outros meios.<br>
+    LimpaIA <span id="ver"></span> · criado por <a href="https://github.com/alberthpalhares" target="_blank" rel="noopener">Alberth Palhares</a> ·
+    <a href="https://github.com/alberthpalhares/limpaia" target="_blank" rel="noopener">código aberto (Apache-2.0)</a> ·
+    <a href="https://github.com/alberthpalhares/limpaia/releases/latest" target="_blank" rel="noopener">ver se há versão nova</a></p>
 </main>
 
 <script>/*WASM_EXEC_JS*/</script>
 <script type="application/octet-stream" id="wasm">/*WASM_GZ_BASE64*/</script>
 <script>
 "use strict";
-const OUT = "JPEG_SEM_METADATA_IA";
+const OUT = "SEM_METADATA_IA";
+const VERSION = "/*VERSAO*/", ICON = "data:image/png;base64,/*ICONE_PNG_BASE64*/";
 const MAX = 256 * 1024 * 1024;           // limite por arquivo (memória do WebAssembly)
 const ZIP_PART = 1500 * 1024 * 1024;     // zip sem zip64: divide antes de 4 GB
 const canWriteDir = "showDirectoryPicker" in window;
 const $ = id => document.getElementById(id);
-const isJPEG = n => /\.jpe?g$/i.test(n) && !n.startsWith("._");
+const isImage = n => /\.(jpe?g|png|webp)$/i.test(n) && !n.startsWith("._");
 
 // ---------- WebAssembly ----------
 const ready = (async () => {
@@ -101,7 +115,7 @@ function dirSink(dir) {
 const CRC = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
 function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
 
-// zip "store" (sem compressão: JPEG já é comprimido), nomes em UTF-8
+// zip "store" (sem compressão: as fotos já são comprimidas), nomes em UTF-8
 function zipSink(download = true) {
   const parts = [], blobs = [];
   let cur = null;
@@ -167,12 +181,12 @@ async function run(files, sink) {
   setBusy(true);
   const log = $("log"), bar = $("bar"), box = $("result");
   log.textContent = ""; box.style.display = "none"; $("progress").style.display = "block";
-  files = files.filter(f => isJPEG(f.name)).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  files = files.filter(f => isImage(f.name)).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
   bar.max = Math.max(files.length, 1); bar.value = 0;
   const results = [], seen = new Set();
   let wrote = 0;
   try {
-    if (!files.length) throw new Error("Nenhum arquivo .jpg/.jpeg encontrado.");
+    if (!files.length) throw new Error("Nenhuma foto .jpg, .jpeg, .png ou .webp encontrada.");
     for (const f of files) {
       let r;
       if (seen.has(f.name.toLowerCase())) r = { Name: f.name, Status: "ERRO", Err: "nome repetido (outra foto com o mesmo nome)" };
@@ -181,7 +195,7 @@ async function run(files, sink) {
         try {
           const res = limpaiaProcess(f.name, new Uint8Array(await f.arrayBuffer()));
           r = JSON.parse(res.result);
-          if (res.out) { await sink.write(f.name, res.out); wrote++; }
+          if (res.out && (r.Found || []).length) { await sink.write(f.name, res.out); wrote++; } // só as fotos com indicação de IA
         } catch (e) { r = { ...(r || { Name: f.name }), Status: "ERRO", Err: String(e && e.message || e) }; }
       }
       seen.add(f.name.toLowerCase());
@@ -210,15 +224,16 @@ async function run(files, sink) {
   } finally { setBusy(false); }
 }
 
-// pasta com permissão de escrita (Chrome/Edge): grava JPEG_SEM_METADATA_IA nela
+// pasta com permissão de escrita (Chrome/Edge): grava SEM_METADATA_IA nela
 async function runDir(dir) {
   if ((await dir.requestPermission({ mode: "readwrite" })) !== "granted") return;
   const files = [];
-  for await (const [name, h] of dir.entries()) if (h.kind === "file" && isJPEG(name)) files.push(await h.getFile());
+  for await (const [name, h] of dir.entries()) if (h.kind === "file" && isImage(name)) files.push(await h.getFile());
   return run(files, dirSink(dir));
 }
 
 // ---------- interface ----------
+$("ver").textContent = VERSION; $("logo").src = ICON; $("favicon").href = ICON;
 $("mode").textContent = canWriteDir
   ? `As fotos limpas são gravadas na subpasta ${OUT}, dentro da pasta escolhida.`
   : `As fotos limpas são baixadas em ${OUT}.zip. (No Chrome ou no Edge, elas são gravadas direto na pasta.)`;

@@ -2,6 +2,9 @@ package runner
 
 import (
 	"bytes"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -27,6 +30,36 @@ func TestProcess(t *testing.T) {
 
 	if out, fr = Process("c.jpg", []byte("não é jpeg")); fr.Status != "ERRO" || out != nil || fr.Err == "" {
 		t.Fatalf("inválido: %+v", fr)
+	}
+}
+
+// Só as fotos com indicação de IA vão para a subpasta; sem nenhuma, nada é criado.
+func TestOnlyAIWritten(t *testing.T) {
+	plain := []byte{0xFF, 0xD8}
+	plain = append(plain, seg(0xC0, []byte{8, 0, 10, 0, 20, 3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1})...)
+	plain = append(plain, seg(0xDA, []byte{3, 1, 0, 2, 0x11, 3, 0x11, 0, 63, 0})...)
+	plain = append(plain, 0x12, 0x34, 0xFF, 0xD9)
+
+	d := t.TempDir()
+	write(t, filepath.Join(d, "limpa.jpg"), plain)
+	sum := Run([]string{filepath.Join(d, "limpa.jpg")}, false, io.Discard)
+	if _, err := os.Stat(filepath.Join(d, OutDirName)); err == nil || sum.Report != "" {
+		t.Fatal("criou a subpasta sem nenhuma foto com IA")
+	}
+	if !strings.Contains(sum.Text(), "nada foi gravado") {
+		t.Fatalf("resumo: %q", sum.Text())
+	}
+
+	write(t, filepath.Join(d, "ia.jpg"), jpegAI())
+	sum = Run([]string{filepath.Join(d, "ia.jpg"), filepath.Join(d, "limpa.jpg")}, false, io.Discard)
+	if _, err := os.Stat(filepath.Join(d, OutDirName, "ia.jpg")); err != nil {
+		t.Fatal("foto com IA não foi gravada")
+	}
+	if _, err := os.Stat(filepath.Join(d, OutDirName, "limpa.jpg")); err == nil {
+		t.Fatal("foto sem IA foi copiada")
+	}
+	if sum.Report == "" || sum.Results[1].Status != "SEM_IA" {
+		t.Fatalf("%+v", sum)
 	}
 }
 

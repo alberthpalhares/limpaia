@@ -1,3 +1,5 @@
+// Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+
 // mkinstall gera os instaladores de uma linha a partir dos modelos em
 // packaging/: preenche repositório, versão e SHA-256 dos pacotes e grava
 // install.sh (LF), install.ps1 (só ASCII) e SHA256SUMS.txt.

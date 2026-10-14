@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="420" viewBox="0 0 780 420" role="img" aria-label="Windows: botão direito nas fotos selecionadas e Remover metadados de IA">
+<title>Windows: botão direito nas fotos selecionadas e Remover metadados de IA</title>
+<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#93c5fd"/><stop offset="1" stop-color="#dbeafe"/></linearGradient>
+  <filter id="sh" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity=".18"/></filter>
+</defs>
+
+<rect width="780" height="420" rx="14" fill="#eef2f7"/>
+<g filter="url(#sh)"><rect x="30" y="28" width="560" height="360" rx="10" fill="#fff"/></g>
+<rect x="30" y="28" width="560" height="44" rx="10" fill="#f3f4f6"/><rect x="30" y="56" width="560" height="16" fill="#f3f4f6"/>
+<text x="54" y="56" font-size="14" fill="#374151" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">📁  Ensaio Maria e João</text>
+<g>
+  <rect x="52" y="92" width="116" height="122" rx="6" fill="#cce4ff" stroke="#3b82f6"/>
+  <g>
+  <clipPath id="c60100"><rect x="60" y="100" width="100" height="74" rx="4"/></clipPath>
+  <g clip-path="url(#c60100)">
+    <rect x="60" y="100" width="100" height="74" fill="url(#sky)"/>
+    <circle cx="88" cy="122.2" r="6.66" fill="#fbbf24"/>
+    <polygon points="55,174 98,131.07999999999998 140,174" fill="#2563eb"/>
+    <polygon points="102,174 132,140.7 165,174" fill="#60a5fa"/>
+  </g>
+</g>
+  <text x="110" y="198" text-anchor="middle" font-size="12.5" fill="#1f2937" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">IMG_0101.jpg</text></g><g>
+  <rect x="182" y="92" width="116" height="122" rx="6" fill="#cce4ff" stroke="#3b82f6"/>
+  <g>
+  <clipPath id="c190100"><rect x="190" y="100" width="100" height="74" rx="4"/></clipPath>
+  <g clip-path="url(#c190100)">
+    <rect x="190" y="100" width="100" height="74" fill="url(#sky)"/>
+    <circle cx="218" cy="122.2" r="6.66" fill="#fbbf24"/>
+    <polygon points="185,174 228,131.07999999999998 270,174" fill="#2563eb"/>
+    <polygon points="232,174 262,140.7 295,174" fill="#60a5fa"/>
+  </g>
+</g>
+  <text x="240" y="198" text-anchor="middle" font-size="12.5" fill="#1f2937" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">IMG_0102.jpg</text></g><g>
+  <rect x="312" y="92" width="116" height="122" rx="6" fill="#cce4ff" stroke="#3b82f6"/>
+  <g>
+  <clipPath id="c320100"><rect x="320" y="100" width="100" height="74" rx="4"/></clipPath>
+  <g clip-path="url(#c320100)">
+    <rect x="320" y="100" width="100" height="74" fill="url(#sky)"/>
+    <circle cx="348" cy="122.2" r="6.66" fill="#fbbf24"/>
+    <polygon points="315,174 358,131.07999999999998 400,174" fill="#2563eb"/>
+    <polygon points="362,174 392,140.7 425,174" fill="#60a5fa"/>
+  </g>
+</g>
+  <text x="370" y="198" text-anchor="middle" font-size="12.5" fill="#1f2937" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">IMG_0103.png</text></g>
+<g>
+  
+  <g>
+  <clipPath id="c60240"><rect x="60" y="240" width="100" height="74" rx="4"/></clipPath>
+  <g clip-path="url(#c60240)">
+    <rect x="60" y="240" width="100" height="74" fill="url(#sky)"/>
+    <circle cx="88" cy="262.2" r="6.66" fill="#fbbf24"/>
+    <polygon points="55,314 98,271.08 140,314" fill="#2563eb"/>
+    <polygon points="102,314 132,280.7 165,314" fill="#60a5fa"/>
+  </g>
+</g>
+  <text x="110" y="338" text-anchor="middle" font-size="12.5" fill="#1f2937" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">IMG_0104.jpg</text></g><g>
+  
+  <g>
+  <clipPath id="c190240"><rect x="190" y="240" width="100" height="74" rx="4"/></clipPath>
+  <g clip-path="url(#c190240)">
+    <rect x="190" y="240" width="100" height="74" fill="url(#sky)"/>
+    <circle cx="218" cy="262.2" r="6.66" fill="#fbbf24"/>
+    <polygon points="185,314 228,271.08 270,314" fill="#2563eb"/>
+    <polygon points="232,314 262,280.7 295,314" fill="#60a5fa"/>
+  </g>
+</g>
+  <text x="240" y="338" text-anchor="middle" font-size="12.5" fill="#1f2937" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">IMG_0105.webp</text></g>
+<g filter="url(#sh)"><rect x="440" y="150" width="292" height="230" rx="10" fill="#fbfbfb" stroke="#d1d5db"/></g>
+<g>
+  
+  
+  <text x="494" y="185" font-size="14" fill="#111827"  font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">Abrir</text></g><g>
+  
+  
+  <text x="494" y="217" font-size="14" fill="#111827"  font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">Editar</text></g>
+<line x1="452" y1="234" x2="720" y2="234" stroke="#e5e7eb"/>
+<g>
+  <rect x="452" y="241" width="268" height="30" rx="5" fill="#e0ecff"/>
+  <image href="data:image/png;base64,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" x="462" y="246" width="20" height="20"/>
+  <text x="494" y="261" font-size="14" fill="#111827" font-weight="600" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">Remover metadados de IA</text></g>
+<line x1="452" y1="278" x2="720" y2="278" stroke="#e5e7eb"/>
+<g>
+  
+  
+  <text x="494" y="305" font-size="14" fill="#111827"  font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">Copiar</text></g><g>
+  
+  
+  <text x="494" y="337" font-size="14" fill="#111827"  font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">Propriedades</text></g>
+<text x="40" y="410" font-size="12.5" fill="#475569" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif">Selecione as fotos (ou clique numa pasta) com o botão direito. No Windows 11, clique antes em “Mostrar mais opções”.</text>
+
+</svg>

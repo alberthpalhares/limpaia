@@ -1,3 +1,5 @@
+// Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
@@ -11,22 +13,26 @@ import (
 	"limpaia/internal/runner"
 )
 
-const usage = `LimpaIA - remove o indicador de IA (C2PA / Content Credentials) de JPEGs,
-sem recomprimir e preservando autoria, copyright, Exif e perfil ICC.
+const usage = `Remove o indicador de IA (C2PA / Content Credentials) de fotos JPEG, PNG e
+WebP, sem recomprimir e preservando autoria, copyright, Exif e perfil de cor.
 
 Uso:
   LimpaIA                      abre o seletor de pasta
-  LimpaIA <pasta|arquivo>...   processa (ou arraste a pasta sobre o programa)
+  LimpaIA <pasta|foto>...      processa (ou arraste a pasta/fotos sobre o programa)
   LimpaIA --verificar <...>    apenas diagnostica, nao grava nada
   LimpaIA --instalar           adiciona "Remover metadados de IA" ao botao direito
   LimpaIA --desinstalar        remove do botao direito
+  LimpaIA --versao             mostra a versao
 
-Saida: subpasta ` + runner.OutDirName + ` ao lado dos originais (que ficam intactos).
+Saida: subpasta ` + runner.OutDirName + ` ao lado dos originais (que ficam intactos),
+so com as fotos que tinham indicacao de IA, e um relatorio.
+
 `
 
 func main() {
+	cleanupOld()
 	var inputs []string
-	dry, install, uninstall, quiet := false, false, false, false
+	dry, install, uninstall, quiet, menu, selection, updated := false, false, false, false, false, false, false
 	for _, a := range os.Args[1:] {
 		switch strings.ToLower(a) {
 		case "--verificar", "--diagnostico":
@@ -37,8 +43,18 @@ func main() {
 			uninstall = true
 		case "--silencioso":
 			quiet = true
+		case "--menu": // chamado pelo botão direito
+			menu = true
+		case "--selecao": // uma das fotos selecionadas no Explorer (um processo por foto)
+			selection = true
+		case "--atualizado": // reaberto pela versão anterior depois de atualizar
+			updated = true
+		case "--versao", "--version":
+			fmt.Println("LimpaIA", version)
+			return
 		case "-h", "--help", "/?":
-			fmt.Print(usage)
+			fmt.Printf("LimpaIA %s\n%s\n\n%s", version, runner.Credit, usage)
+			fmt.Println(runner.Notice)
 			return
 		default:
 			if runtime.GOOS == "windows" {
@@ -52,6 +68,26 @@ func main() {
 		}
 	}
 	interactive := len(inputs) == 0 && !install && !uninstall
+
+	if updated { // chamado pela versão anterior logo depois de atualizar
+		if menuInstalled() {
+			_ = installMenu() // renova a cópia do menu, o ícone e as chaves com a versão nova
+		}
+		return
+	}
+
+	var release func()
+	if selection && !install && !uninstall {
+		var batch []string
+		batch, release = gatherSelection(inputs)
+		if batch == nil {
+			return // outro processo da mesma seleção vai processar esta foto
+		}
+		inputs = batch
+	}
+	if release == nil {
+		release = func() {}
+	}
 
 	switch {
 	case install:
@@ -82,19 +118,23 @@ func main() {
 
 	files, err := runner.Collect(inputs)
 	if err != nil {
+		release()
 		fmt.Println("Erro:", err)
 		notify("LimpaIA", "Erro: "+err.Error())
 		pause(quiet)
 		os.Exit(1)
 	}
 	if len(files) == 0 {
-		fmt.Println("Nenhum arquivo .jpg/.jpeg encontrado.")
-		notify("LimpaIA", "Nenhum arquivo .jpg/.jpeg encontrado.")
+		release()
+		fmt.Println("Nenhuma foto .jpg, .jpeg, .png ou .webp encontrada.")
+		notify("LimpaIA", "Nenhuma foto .jpg, .jpeg, .png ou .webp encontrada.")
 		pause(quiet)
 		return
 	}
-	fmt.Printf("Processando %d JPEG(s)%s...\n\n", len(files), map[bool]string{true: " (somente diagnostico)", false: ""}[dry])
+	fmt.Printf("LimpaIA %s · por Alberth Palhares\n", version)
+	fmt.Printf("Processando %d foto(s)%s...\n\n", len(files), map[bool]string{true: " (somente diagnostico)", false: ""}[dry])
 	sum := runner.Run(files, dry, os.Stdout)
+	release()
 	fmt.Println("\n" + sum.Text())
 	if sum.Report != "" {
 		fmt.Println("Relatorio:", sum.Report)
@@ -103,6 +143,9 @@ func main() {
 		}
 	}
 	notify("LimpaIA", strings.ReplaceAll(sum.Text(), "\n\n", "\n"))
+	if (interactive || menu) && !dry {
+		maybeUpdate() // no máximo uma vez por semana; só pergunta se houver versão nova
+	}
 	pause(quiet)
 	if sum.Errors() > 0 || sum.Persist() > 0 {
 		os.Exit(2)

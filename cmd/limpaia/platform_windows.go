@@ -1,3 +1,5 @@
+// Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+
 //go:build windows
 
 package main
@@ -70,7 +72,7 @@ func pickFolder() (string, error) {
 	var disp [260]uint16
 	bi := browseInfo{
 		displayName: &disp[0],
-		title:       u16("Escolha a pasta com os JPEGs"),
+		title:       u16("Escolha a pasta com as fotos"),
 		flags:       0x1 | 0x40, // BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE
 	}
 	pidl, _, _ := shell.NewProc("SHBrowseForFolderW").Call(uintptr(unsafe.Pointer(&bi)))
@@ -93,6 +95,20 @@ func askYesNo(title, msg string) bool {
 	const yesNo, question, foreground, topmost = 0x4, 0x20, 0x10000, 0x40000
 	r, _, _ := user32.NewProc("MessageBoxW").Call(0, uintptr(unsafe.Pointer(u16(msg))), uintptr(unsafe.Pointer(u16(title))), yesNo|question|foreground|topmost)
 	return r == 6 // IDYES
+}
+
+// askUpdate: Sim = atualizar, Não = depois, Cancelar = não avisar mais.
+func askUpdate(title, msg string) string {
+	const yesNoCancel, info, foreground, topmost = 0x3, 0x40, 0x10000, 0x40000
+	msg += "\n\nSim: atualizar agora\nNão: lembrar depois\nCancelar: não avisar mais"
+	r, _, _ := user32.NewProc("MessageBoxW").Call(0, uintptr(unsafe.Pointer(u16(msg))), uintptr(unsafe.Pointer(u16(title))), yesNoCancel|info|foreground|topmost)
+	switch r {
+	case 6: // IDYES
+		return "atualizar"
+	case 2: // IDCANCEL
+		return "nunca"
+	}
+	return "depois"
 }
 
 // ---------- registro (HKCU, sem admin) ----------
@@ -145,33 +161,50 @@ var menuKeys = []struct{ key, arg string }{
 	{`Software\Classes\Directory\Background\shell\LimpaIA`, "%V"},
 }
 
+// Verbos para fotos selecionadas. O Explorer abre um processo por foto
+// (MultiSelectModel=Document: sem o limite de 15 itens); com --selecao eles se
+// juntam num lote só (selection.go): uma janela e um relatório.
+var fileKeys = []string{
+	`Software\Classes\SystemFileAssociations\.jpg\shell\LimpaIA`,
+	`Software\Classes\SystemFileAssociations\.jpeg\shell\LimpaIA`,
+	`Software\Classes\SystemFileAssociations\.png\shell\LimpaIA`,
+	`Software\Classes\SystemFileAssociations\.webp\shell\LimpaIA`,
+}
+
 func installMenu() error {
 	exe, err := installCopy()
 	if err != nil {
 		return err
 	}
+	icon := installIcon(exe)
 	for _, k := range menuKeys {
 		if err := regSet(k.key, "", menuText); err != nil {
 			return err
 		}
-		if err := regSet(k.key, "Icon", exe); err != nil {
+		if err := regSet(k.key, "Icon", icon); err != nil {
 			return err
 		}
-		if err := regSet(k.key+`\command`, "", fmt.Sprintf(`"%s" "%s"`, exe, k.arg)); err != nil {
+		if err := regSet(k.key+`\command`, "", fmt.Sprintf(`"%s" --menu "%s"`, exe, k.arg)); err != nil {
 			return err
+		}
+	}
+	for _, k := range fileKeys {
+		regDelete(k + `\DropTarget`) // de testes anteriores
+		for _, v := range [][3]string{
+			{k, "", menuText}, {k, "Icon", icon}, {k, "MultiSelectModel", "Document"},
+			{k + `\command`, "", fmt.Sprintf(`"%s" --menu --selecao "%%1"`, exe)},
+		} {
+			if err := regSet(v[0], v[1], v[2]); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-// verbos por arquivo das versões anteriores (removidos: um processo por foto selecionada)
-var legacyKeys = []string{
-	`Software\Classes\SystemFileAssociations\.jpg\shell\LimpaIA`,
-	`Software\Classes\SystemFileAssociations\.jpeg\shell\LimpaIA`,
-}
-
 func uninstallMenu() error {
-	for _, k := range legacyKeys {
+	for _, k := range fileKeys {
+		regDelete(k + `\DropTarget`)
 		regDelete(k + `\command`)
 		regDelete(k)
 	}
@@ -179,6 +212,7 @@ func uninstallMenu() error {
 		regDelete(k.key + `\command`)
 		regDelete(k.key)
 	}
+	removeIcon()
 	removeCopy()
 	return nil
 }

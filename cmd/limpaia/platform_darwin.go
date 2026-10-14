@@ -1,3 +1,5 @@
+// Copyright 2026 Alberth Palhares · SPDX-License-Identifier: Apache-2.0
+
 //go:build darwin
 
 package main
@@ -17,7 +19,7 @@ func isTTYWindowOwner() bool {
 }
 
 func pickFolder() (string, error) {
-	out, err := exec.Command("osascript", "-e", `activate`, "-e", `POSIX path of (choose folder with prompt "Escolha a pasta com os JPEGs")`).Output()
+	out, err := exec.Command("osascript", "-e", `activate`, "-e", `POSIX path of (choose folder with prompt "Escolha a pasta com as fotos")`).Output()
 	return strings.TrimSpace(string(out)), err
 }
 
@@ -62,11 +64,11 @@ func installMenu() error {
 <key>NSMenuItem</key><dict><key>default</key><string>Remover metadados de IA</string></dict>
 <key>NSMessage</key><string>runWorkflowAsService</string>
 <key>NSRequiredContext</key><dict><key>NSApplicationIdentifier</key><string>com.apple.finder</string></dict>
-<key>NSSendFileTypes</key><array><string>public.folder</string><string>public.jpeg</string></array>
+<key>NSSendFileTypes</key><array><string>public.folder</string><string>public.jpeg</string><string>public.png</string><string>org.webmproject.webp</string></array>
 </dict></array></dict></plist>`
 	// uma única execução para todos os itens selecionados (um relatório só);
 	// "exit 0" evita o alerta do Automator quando há erros (o resumo já é notificado)
-	cmd := `"$HOME/Library/Application Support/LimpaIA/LimpaIA" --silencioso "$@"; exit 0`
+	cmd := `"$HOME/Library/Application Support/LimpaIA/LimpaIA" --menu --silencioso "$@"; exit 0`
 	doc := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -109,6 +111,22 @@ func uninstallMenu() error {
 func menuInstalled() bool {
 	_, err := os.Stat(filepath.Join(servicesDir(), wfName))
 	return err == nil
+}
+
+// askUpdate devolve "atualizar", "depois" ou "nunca".
+func askUpdate(title, msg string) string {
+	msg = strings.NewReplacer(`\`, ``, `"`, `\"`).Replace(msg)
+	script := fmt.Sprintf(`button returned of (display dialog "%s" with title "%s" buttons {"Não avisar mais", "Depois", "Atualizar"} default button "Atualizar" with icon note)`, strings.ReplaceAll(msg, "\n", `" & return & "`), title)
+	out, err := exec.Command("osascript", "-e", "activate", "-e", script).Output()
+	switch strings.TrimSpace(string(out)) {
+	case "Atualizar":
+		if err == nil {
+			return "atualizar"
+		}
+	case "Não avisar mais":
+		return "nunca"
+	}
+	return "depois"
 }
 
 func askYesNo(title, msg string) bool {
