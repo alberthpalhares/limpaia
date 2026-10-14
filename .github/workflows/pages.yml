@@ -1,11 +1,17 @@
 # Copyright 2026 Alberth Palhares - SPDX-License-Identifier: Apache-2.0
 # Publica a versão web (LimpaIA.html da release) em https://alberthpalhares.github.io/limpaia/
+# Execução manual com "do_main": monta a página a partir do main (ex.: só texto mudou, sem nova release).
 name: Site (versão web)
 
 on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      do_main:
+        description: "Montar a página a partir do main (em vez de baixar da última release)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,6 +30,7 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - name: Baixar o LimpaIA.html da release
+        if: ${{ !inputs.do_main }}
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
@@ -32,6 +39,22 @@ jobs:
           # sem TAG (execução manual): a release mais recente
           gh release download $TAG --repo "$GITHUB_REPOSITORY" --pattern LimpaIA.html --dir site
           mv site/LimpaIA.html site/index.html
+      - if: ${{ inputs.do_main }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - if: ${{ inputs.do_main }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Montar o LimpaIA.html a partir do main
+        if: ${{ inputs.do_main }}
+        run: |
+          # mostra a versão da última tag (o código é o da release; muda só o que entrou no main depois)
+          tag=$(git describe --tags --abbrev=0)
+          CGO_ENABLED=0 GOOS=js GOARCH=wasm go build -trimpath -ldflags "-s -w -X main.version=$tag" -o limpaia.wasm ./cmd/limpaia-web
+          mkdir site
+          go run ./tools/mkweb -wasm limpaia.wasm -modelo web/index.html -versao "$tag" -out site/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
